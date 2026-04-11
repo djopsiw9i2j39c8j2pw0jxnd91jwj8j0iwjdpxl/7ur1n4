@@ -164,7 +164,7 @@ Color = ColorSequence.new({
 })
 
 Window:Tag({
-    Title = "v1.5.2",
+    Title = "v1.5.3",
     Color = Color3.fromHex("#30ff6a")
 })
 
@@ -4560,7 +4560,7 @@ ESP:RegisterType("Clone", Color3.fromRGB(0,255,0), function(obj)
     return obj:IsA("Model") and allowedModelsClone[obj.Name]
 end, false)
 
-CreateESPToggle("Clone", "ESP Clone", "Hiển thị clone đặc biệt", true, true)
+CreateESPToggle("Clone", "ESP Clone", "Show the minions/zombies created by the killers.", true, true)
 
 ESP:RegisterType("Model", Color3.fromRGB(255,170,0), function(obj)
     if not obj:IsA("Model") then return false end
@@ -4570,7 +4570,7 @@ ESP:RegisterType("Model", Color3.fromRGB(255,170,0), function(obj)
         or obj:FindFirstChild("HumanoidRootPart")
 end, false)
 
-CreateESPToggle("Model", "ESP Model", "Hiển thị tất cả model hợp lệ", true, true)
+CreateESPToggle("Model", "ESP Model", "Show all valid models in the map.", true, true)
 
 TabHandles.Visual:Section({ Title = "Player", Icon = "user" })
 
@@ -4584,7 +4584,7 @@ local allowedSurvivors = {
     ["Veeronica"] = true,
     ["JaneDoe"] = true,
     ["Taph"] = true,
-    ["Quest1337"] = true,
+    ["Guest1337"] = true,
     ["TwoTime"] = true,
     ["Noob"] = true,
     ["Dusekkar"] = true,
@@ -4612,7 +4612,7 @@ ESP:RegisterType("Survivor", Color3.fromRGB(255,255,255), function(obj)
         )
 end, true)
 
-CreateESPToggle("Survivor", "ESP Survivors", "Hiển thị người chơi sống + model whitelist", true, true)
+CreateESPToggle("Survivor", "ESP Survivors", "Show location and hp of all survivors.", true, true)
 
 ESP:RegisterType("Killer", Color3.fromRGB(255,0,0), function(obj)
     local killersFolder = GameLogic.GetKillersFolder()
@@ -4625,7 +4625,7 @@ ESP:RegisterType("Killer", Color3.fromRGB(255,0,0), function(obj)
         )
 end, true)
 
-CreateESPToggle("Killer", "ESP Killers", "Hiển thị killer + model whitelist", true, true)
+CreateESPToggle("Killer", "ESP Killers", "Show location and hp of all killers.", true, true)
 
 TabHandles.Visual:Section({ Title = "Other", Icon = "layers" })
 
@@ -4654,14 +4654,14 @@ ESP:RegisterType("Generator", Color3.fromRGB(0,255,255), function(obj)
     return progress.Value < 100
 end, false)
 
-CreateESPToggle("Generator", "ESP Generator", "Hiển thị máy phát điện chưa hoàn thành", true, true)
+CreateESPToggle("Generator", "ESP Generator", "Show unfinished generators on the map.", true, true)
 
 ESP:RegisterType("Item", Color3.fromRGB(255,215,0), function(obj)
     local map = Workspace:FindFirstChild("Map")
     return obj:IsA("Tool") and map and obj:IsDescendantOf(map)
 end, false)
 
-CreateESPToggle("Item", "ESP Items", "Hiển thị vật phẩm trên map", true, true)
+CreateESPToggle("Item", "ESP Items", "Display the location of the items in the map.", true, true)
 
 TabHandles.Visual:Section({ Title = "Builderman", Icon = "pen-tool" })
 
@@ -4669,13 +4669,13 @@ ESP:RegisterType("Dispenser", Color3.fromRGB(0,162,255), function(obj)
     return obj:IsA("Model") and obj.Name:lower():find("dispenser")
 end, false)
 
-CreateESPToggle("Dispenser", "ESP Dispenser", "Hiển thị máy Dispenser", true, true)
+CreateESPToggle("Dispenser", "ESP Dispenser", "Display the location of the healing dispenser.", true, true)
 
 ESP:RegisterType("Sentry", Color3.fromRGB(128,128,128), function(obj)
     return obj:IsA("Model") and obj.Name:lower():find("sentry")
 end, false)
 
-CreateESPToggle("Sentry", "ESP Sentry", "Hiển thị súng Sentry", true, true)
+CreateESPToggle("Sentry", "ESP Sentry", "Display the location of the Sentry launcher.", true, true)
 
 TabHandles.Visual:Section({ Title = "Trap / Tapt", Icon = "triangle-alert" })
 
@@ -4683,13 +4683,13 @@ ESP:RegisterType("Tripwire", Color3.fromRGB(255,85,0), function(obj)
     return obj:IsA("Model") and obj.Name:find("TaphTripwire")
 end, false)
 
-CreateESPToggle("Tripwire", "ESP Tripwire", "Hiển thị bẫy Tripwire", true, true)
+CreateESPToggle("Tripwire", "ESP Tripwire", "Display the location of the Tripwire trap.", true, true)
 
 ESP:RegisterType("Subspace", Color3.fromRGB(160,32,240), function(obj)
     return obj:IsA("Model") and obj.Name == "SubspaceTripmine"
 end, false)
 
-CreateESPToggle("Subspace", "ESP Subspace", "Hiển thị mìn Subspace", true, true)
+CreateESPToggle("Subspace", "ESP Subspace", "Display the location of the Subspace mine.", true, true)
 
 local Services = Services
 local LocalPlayer = Services.Players.LocalPlayer
