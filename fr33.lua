@@ -164,7 +164,7 @@ Color = ColorSequence.new({
 })
 
 Window:Tag({
-    Title = "v1.5.3",
+    Title = "v1.5.6",
     Color = Color3.fromHex("#30ff6a")
 })
 
@@ -3659,7 +3659,7 @@ AddLoop("AutoPunch", function()
                 task.spawn(function()
                     local start = tick()
 
-                    while tick() - start < 2 do
+                    while tick() - start < 1.5 do
                         if not getHRP() or not root or not root.Parent then break end
 
                         local predictedPos = root.Position + (root.CFrame.LookVector * predictionValue)
@@ -4371,53 +4371,227 @@ AddLoop("NoStun", function()
     end
 end, 0.1, 2)
 
-local StaminaModule = require(
-    ReplicatedStorage
-        .Systems
-        .Character
-        .Game
-        .Sprinting
-)
+TabHandles.Player:Section({ Title = "Stamina", Icon = "wind" })
 
-local function RestoreStamina()
-    local maxStamina = 9999999999
+do
+local StaminaModulePath = ReplicatedStorage
+    .Systems
+    .Character
+    .Game
+    .Sprinting
 
-    if typeof(StaminaModule.SetStamina) == "function" then
-        StaminaModule:SetStamina(maxStamina)
-    elseif typeof(StaminaModule.UpdateStamina) == "function" then
-        StaminaModule:UpdateStamina(maxStamina)
-    else
-        StaminaModule.Stamina = maxStamina
-    end
+local StaminaModule
 
-    if StaminaModule.MaxStamina ~= nil then
-        StaminaModule.MaxStamina = maxStamina
+local infStaminaOn = false
+
+local customMaxEnabled = false
+local customMaxValue = 100
+
+local customRegenEnabled = false
+local customRegenValue = 1
+
+local customDrainEnabled = false
+local customDrainValue = 1
+
+local originalMax, originalRegen, originalDrain
+
+local function LoadStaminaModule()
+    if StaminaModule then return true end
+
+    local success, mod = pcall(require, StaminaModulePath)
+    if success and mod then
+        StaminaModule = mod
+
+        originalMax = StaminaModule.MaxStamina or 100
+        originalRegen = StaminaModule.StaminaGain or 1
+        originalDrain = StaminaModule.StaminaLoss or 1
+
+        return true
     end
 end
 
+local function SetStamina(val)
+    if not StaminaModule then return end
+
+    if typeof(StaminaModule.SetStamina) == "function" then
+        StaminaModule:SetStamina(val)
+    elseif typeof(StaminaModule.UpdateStamina) == "function" then
+        StaminaModule:UpdateStamina(val)
+    else
+        StaminaModule.Stamina = val
+    end
+end
+
+local function ApplyMax()
+    if not StaminaModule or not originalMax then return end
+    if customMaxEnabled then
+        StaminaModule.MaxStamina = customMaxValue
+    else
+        StaminaModule.MaxStamina = originalMax
+    end
+end
+
+local function ApplyRegen()
+    if not StaminaModule or not originalRegen then return end
+    if customRegenEnabled then
+        StaminaModule.StaminaGain = customRegenValue
+    else
+        StaminaModule.StaminaGain = originalRegen
+    end
+end
+
+local function ApplyDrain()
+    if not StaminaModule or not originalDrain then return end
+    if customDrainEnabled then
+        StaminaModule.StaminaLoss = customDrainValue
+    else
+        StaminaModule.StaminaLoss = originalDrain
+    end
+end
+
+local function ApplyAll()
+    ApplyMax()
+    ApplyRegen()
+    ApplyDrain()
+end
+
+AddLoop("StaminaInit", function()
+    if not StaminaModule then
+        if LoadStaminaModule() then
+            ApplyAll()
+        end
+    end
+end, 1, 2)
+
+AddLoop("StaminaAutoApply", function()
+    if not StaminaModule then return end
+    ApplyAll()
+end, 1, 1)
+
+AddLoop("CustomStamina", function()
+    if not StaminaModule then return end
+
+    local stamina = StaminaModule.Stamina or 0
+    local max = StaminaModule.MaxStamina or 100
+
+    if infStaminaOn then
+        SetStamina(max)
+    end
+
+    if stamina < -100 then
+        SetStamina(-100)
+    end
+end, 0.1, 1)
+
+TabHandles.Player:Button({
+    Title = "Full Stamina",
+    Desc = "Get full 100% stamina.",
+    Callback = function()
+        SafeCall(function()
+            if not StaminaModule then
+                if not LoadStaminaModule() then return end
+                ApplyAll()
+            end
+
+            local max = StaminaModule.MaxStamina or 100
+            SetStamina(max)
+        end)
+    end
+})
+
 TabHandles.Player:Toggle({
     Title = "Infinite Stamina",
-    Desc = "It helps you never get tired.",
-    Flag = "Infinite Stamina",
+    Desc = "Never run out of stamina.",
+    Flag = "Inf Stamina",
     Value = false,
-    Callback = function(state)
-        ToggleLoop("InfStamina", state)
+    Callback = function(v)
+        infStaminaOn = v
+        ToggleLoop("CustomStamina", v)
+        ToggleLoop("StaminaAutoApply", v or customMaxEnabled or customRegenEnabled or customDrainEnabled)
+    end
+})
 
-        if StaminaModule.StaminaLossDisabled ~= nil then
-            StaminaModule.StaminaLossDisabled = state
-        end
-
-        if state then
-            RestoreStamina()
+TabHandles.Player:Input({
+    Title = "Max Stamina",
+    Desc = "Enter custom stamina limit.",
+    Flag = "Max Stamina Input",
+    Placeholder = "Enter the number",
+    Value = "",
+    Callback = function(txt)
+        local num = tonumber(txt)
+        if num then
+            customMaxValue = num
+            ApplyMax()
         end
     end
 })
 
-AddLoop("InfStamina", function()
-    if StaminaModule.Stamina <= 100 then
-        RestoreStamina()
+TabHandles.Player:Toggle({
+    Title = "Apply Max Stamina",
+    Desc = "Enable custom stamina limit.",
+    Flag = "Max Stamina Toggle",
+    Value = false,
+    Callback = function(v)
+        customMaxEnabled = v
+        ApplyMax()
+        ToggleLoop("StaminaAutoApply", v or infStaminaOn or customRegenEnabled or customDrainEnabled)
     end
-end, 0.2, 1)
+})
+
+TabHandles.Player:Input({
+    Title = "Stamina Regen",
+    Desc = "Enter regen speed.",
+    Flag = "Regen Input",
+    Placeholder = "Enter the number",
+    Value = "",
+    Callback = function(txt)
+        local num = tonumber(txt)
+        if num then
+            customRegenValue = num
+            ApplyRegen()
+        end
+    end
+})
+
+TabHandles.Player:Toggle({
+    Title = "Apply Regen",
+    Desc = "Enable custom regen.",
+    Flag = "Regen Toggle",
+    Value = false,
+    Callback = function(v)
+        customRegenEnabled = v
+        ApplyRegen()
+        ToggleLoop("StaminaAutoApply", v or infStaminaOn or customMaxEnabled or customDrainEnabled)
+    end
+})
+
+TabHandles.Player:Input({
+    Title = "Stamina Drain",
+    Desc = "Enter drain speed.",
+    Flag = "Drain Input",
+    Placeholder = "Enter the number",
+    Value = "",
+    Callback = function(txt)
+        local num = tonumber(txt)
+        if num then
+            customDrainValue = num
+            ApplyDrain()
+        end
+    end
+})
+
+TabHandles.Player:Toggle({
+    Title = "Apply Drain",
+    Desc = "Enable custom drain.",
+    Flag = "Drain Toggle",
+    Value = false,
+    Callback = function(v)
+        customDrainEnabled = v
+        ApplyDrain()
+        ToggleLoop("StaminaAutoApply", v or infStaminaOn or customMaxEnabled or customRegenEnabled)
+    end
+})
+end
 
 local WalkSpeed = {
     Value = 16,
@@ -4690,6 +4864,50 @@ ESP:RegisterType("Subspace", Color3.fromRGB(160,32,240), function(obj)
 end, false)
 
 CreateESPToggle("Subspace", "ESP Subspace", "Display the location of the Subspace mine.", true, true)
+
+local function ServerHop()
+    local TeleportService = Services.TeleportService
+    local placeId = game.PlaceId
+
+    print("[ServerHop] Đang rời server hiện tại...")
+
+    local success, err = pcall(function()
+        TeleportService:Teleport(placeId, LocalPlayer)
+    end)
+
+    if success then
+        WindUI:Notify({
+            Title = "Rejoin Starting",
+            Content = "Bắt Đầu Vào Máy Chủ Đã Fix Lag",
+            Duration = 3,
+            Icon = "info"
+        })
+    else
+        warn("[ServerHop] Lỗi khi Teleport:", err)
+        WindUI:Notify({
+            Title = "Lỗi Teleport",
+            Content = tostring(err),
+            Duration = 4,
+            Icon = "alert"
+        })
+    end
+end
+
+TabHandles.Misc:Button({
+    Title = "Rejoin To Fix Lag",
+    Desc = "Press to activate the server lag reduction function.",
+    Callback = function()
+        WindUI:Notify({
+            Title = "Rejoin Settings",
+            Content = "Đang Giảm Lag Cho Các Máy Chủ...",
+            Duration = 2,
+            Icon = "info"
+        })
+
+        task.wait(0.3)
+        SafeCall(ServerHop)
+    end
+})
 
 local Services = Services
 local LocalPlayer = Services.Players.LocalPlayer
